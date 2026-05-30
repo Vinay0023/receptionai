@@ -38,7 +38,7 @@ So I built ReceptionAI.
 
 ---
 
-## 💡 What It Does
+##  What It Does
 
 ReceptionAI is an AI receptionist that:
 - Answers calls instantly when staff are busy
