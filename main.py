@@ -3,6 +3,8 @@ from fastapi.responses import PlainTextResponse
 from groq import Groq
 from dotenv import load_dotenv
 import os
+import psycopg2
+from datetime import datetime
 
 load_dotenv()
 
@@ -21,11 +23,56 @@ doctor_schedule = {
     "sunday": []
 }
 
-def check_availability(day: str, time: str) -> bool:
-    day = day.lower()
-    if day in doctor_schedule:
-        return time.lower() in doctor_schedule[day]
-    return False
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        port=os.getenv("DB_PORT")
+    )
+    return conn
+
+def create_bookings_table():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS bookings (
+                id SERIAL PRIMARY KEY,
+                patient_name VARCHAR(100),
+                date_of_birth VARCHAR(50),
+                booking_day VARCHAR(50),
+                booking_time VARCHAR(50),
+                doctor VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("✅ Bookings table ready!")
+    except Exception as e:
+        print(f"❌ Database error: {e}")
+
+def save_booking(patient_name, date_of_birth, booking_day, booking_time, doctor):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO bookings 
+            (patient_name, date_of_birth, booking_day, booking_time, doctor)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (patient_name, date_of_birth, booking_day, booking_time, doctor))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"✅ Booking saved for {patient_name}")
+    except Exception as e:
+        print(f"❌ Error saving booking: {e}")
+
+# Create table when app starts
+create_bookings_table()
 
 @app.get("/")
 def home():
@@ -85,6 +132,10 @@ async def handle_response(SpeechResult: str = Form(None)):
                    available at that time. The available times on [day] 
                    are [list times]. Which would you prefer?"
                 
+                IMPORTANT: When booking is confirmed include this exact 
+                format in your response:
+                BOOKING_CONFIRMED|name|dob|day|time|Dr Steven
+                
                 Rules:
                 - Keep responses short and clear
                 - This is a phone call so be conversational
@@ -100,6 +151,23 @@ async def handle_response(SpeechResult: str = Form(None)):
     bot_reply = ai_response.choices[0].message.content
 
     print(f"Bot replied: {bot_reply}")
+
+    # Check if booking was confirmed and save to database
+    if "BOOKING_CONFIRMED|" in bot_reply:
+        try:
+            parts = bot_reply.split("BOOKING_CONFIRMED|")[1].split("|")
+            save_booking(
+                patient_name=parts[0],
+                date_of_birth=parts[1],
+                booking_day=parts[2],
+                booking_time=parts[3],
+                doctor=parts[4].split("\n")[0]
+            )
+            bot_reply = bot_reply.replace(
+                bot_reply[bot_reply.find("BOOKING_CONFIRMED"):], ""
+            ).strip()
+        except Exception as e:
+            print(f"Error parsing booking: {e}")
 
     conversation_history.append({
         "role": "assistant",
@@ -118,6 +186,19 @@ async def handle_response(SpeechResult: str = Form(None)):
         media_type="application/xml",
         headers={"ngrok-skip-browser-warning": "true"}
     )
+
+@app.get("/bookings")
+def get_bookings():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM bookings ORDER BY created_at DESC")
+        bookings = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return {"bookings": bookings}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/test-ai")
 def test_ai():
