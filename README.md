@@ -1,4 +1,4 @@
-<img width="2560" height="1368" alt="image" src="https://github.com/user-attachments/assets/649cefad-df4c-4281-9fc1-0f43b77eeba9" /># ReceptionAI 
+
 ### AI Voice Receptionist for NZ GP Clinics
 
 ---
