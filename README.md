@@ -115,7 +115,8 @@ AWS EC2 deployment (In Progress)
 AWS Polly neural voice (Coming Soon)
 ```
 
-##  Certifications
+**##  Certifications**
+
 - Level 7 Diploma in Cloud Engineering 
 - Level 6 Diploma in Cyber Security 
 - AWS Cloud Practitioner 
@@ -125,7 +126,7 @@ AWS Polly neural voice (Coming Soon)
 
 ---
 
-##  Contact
+**##  Contact**
 
 **Vinay Sharma**
  Wellington, NZ
