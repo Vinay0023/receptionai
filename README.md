@@ -116,7 +116,9 @@ AWS Polly neural voice (Coming Soon)
 ```
 ---
 
-##  Certifications
+---
+
+## 🎓 Certifications
 
 - **Level 7 Diploma in Cloud Engineering**
 - **Level 6 Diploma in Cyber Security**
@@ -126,12 +128,16 @@ AWS Polly neural voice (Coming Soon)
 
 ---
 
-##  Contact
+## 📬 Contact
 
 **Vinay Sharma**
-Wellington, NZ
-Open to roles anywhere in NZ or Australia
+📍 Wellington, NZ
+💼 Open to roles anywhere in NZ or Australia
 
 🔗 [LinkedIn](https://www.linkedin.com/in/vinaysharma2323/)
 📧 sharmavinay2323@gmail.com
+
+---
+
+
 
