@@ -11,8 +11,6 @@ groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 conversation_history = []
 
-# Fake doctor schedule for now
-# We will connect real calendar later
 doctor_schedule = {
     "monday": ["9:00am", "10:00am", "2:00pm", "3:00pm"],
     "tuesday": ["9:00am", "11:00am", "1:00pm", "4:00pm"],
@@ -41,7 +39,7 @@ async def voice(request: Request):
     conversation_history.clear()
     response = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Gather input="speech" action="/handle-response" timeout="5" speechTimeout="auto" language="en-NZ">
+    <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
         <Say voice="alice">Good morning! Thank you for calling City Medical. How can I help you today?</Say>
     </Gather>
 </Response>"""
@@ -110,7 +108,7 @@ async def handle_response(SpeechResult: str = Form(None)):
 
     response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Gather input="speech" action="/handle-response" timeout="5" speechTimeout="auto" language="en-NZ">
+    <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
         <Say voice="alice">{bot_reply}</Say>
     </Gather>
 </Response>"""
