@@ -113,26 +113,24 @@ AWS SES email confirmations (In Progress)
 AWS SNS staff alerts (In Progress)
 AWS EC2 deployment (In Progress)
 AWS Polly neural voice (Coming Soon)
-```
----
 
 ---
 
-## 🎓 Certifications
+##  Certification
 
-- **Level 7 Diploma in Cloud Engineering**
-- **Level 6 Diploma in Cyber Security**
-- **AWS Cloud Practitioner**
-- **AWS AI Cloud Practitioner**
+- **Level 7 Diploma in Cloud Engineering
+- **Level 6 Diploma in Cyber Security
+- **AWS Cloud Practitioner
+- **AWS AI Cloud Practitioner
 - **AWS Solutions Architect Associate** (In Progress)
 
 ---
 
-## 📬 Contact
+##  Contact
 
 **Vinay Sharma**
-📍 Wellington, NZ
-💼 Open to roles anywhere in NZ or Australia
+Wellington, NZ
+Open to roles anywhere in NZ or Australia
 
 🔗 [LinkedIn](https://www.linkedin.com/in/vinaysharma2323/)
 📧 sharmavinay2323@gmail.com
