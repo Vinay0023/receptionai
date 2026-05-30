@@ -24,7 +24,7 @@ AI Engineer roles anywhere in NZ or Australia.
 ## Why I Built This
 
 While living in Wellington I noticed something 
-simple but frustrating — GP clinics miss calls 
+simple but frustrating, GP clinics miss calls 
 every single day.
 
 When a receptionist is busy, the next patient 
@@ -101,6 +101,20 @@ Staff alerted via AWS SNS
 
 ---
 
+##  Current Progress
+
+Bot answers inbound calls (Done)
+Two way voice conversation (Done)
+Collects patient name and DOB (Done)
+Checks doctor availability (Done)
+Books appointments automatically (Done)
+Saves bookings to AWS RDS PostgreSQL (Done)
+AWS SES email confirmations (In Progress)
+AWS SNS staff alerts (In Progress)
+AWS EC2 deployment (In Progress)
+AWS Polly neural voice (Coming Soon)
+```
+
 ##  Certifications
 - Level 7 Diploma in Cloud Engineering 
 - Level 6 Diploma in Cyber Security 
@@ -111,11 +125,11 @@ Staff alerted via AWS SNS
 
 ---
 
-## 📬 Contact
+##  Contact
 
 **Vinay Sharma**
-📍 Wellington, NZ
-💼 Open to roles anywhere in NZ or Australia
+ Wellington, NZ
+Open to roles anywhere in NZ or Australia
 
 https://www.linkedin.com/in/vinaysharma2323/
 [sharmavinay2323@gmail.com)
