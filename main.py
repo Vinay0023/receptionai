@@ -38,9 +38,7 @@ def home():
 
 @app.post("/voice")
 async def voice(request: Request):
-    # Clear conversation for new call
     conversation_history.clear()
-    
     response = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Gather input="speech" action="/handle-response" timeout="5" speechTimeout="auto" language="en-NZ">
@@ -56,16 +54,17 @@ async def voice(request: Request):
 @app.post("/handle-response")
 async def handle_response(SpeechResult: str = Form(None)):
     caller_said = SpeechResult or "hello"
-    
+
     print(f"Caller said: {caller_said}")
-    
+
     conversation_history.append({
         "role": "user",
         "content": caller_said
     })
-    
+
     ai_response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
+        max_tokens=150,
         messages=[
             {
                 "role": "system",
@@ -99,23 +98,23 @@ async def handle_response(SpeechResult: str = Form(None)):
             }
         ] + conversation_history
     )
-    
+
     bot_reply = ai_response.choices[0].message.content
-    
+
     print(f"Bot replied: {bot_reply}")
-    
+
     conversation_history.append({
         "role": "assistant",
         "content": bot_reply
     })
-    
+
     response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Gather input="speech" action="/handle-response" timeout="5" speechTimeout="auto" language="en-NZ">
         <Say voice="alice">{bot_reply}</Say>
     </Gather>
 </Response>"""
-    
+
     return PlainTextResponse(
         content=response,
         media_type="application/xml",
@@ -125,10 +124,11 @@ async def handle_response(SpeechResult: str = Form(None)):
 @app.get("/test-ai")
 def test_ai():
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
+        max_tokens=150,
         messages=[{
             "role": "user",
-            "content": "You are a friendly medical receptionist at a NZ GP clinic. Greet a patient."
+            "content": "You are a friendly medical receptionist at a NZ GP clinic. Greet a patient calling the clinic."
         }]
     )
     return {"response": response.choices[0].message.content}
