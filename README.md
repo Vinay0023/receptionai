@@ -1,4 +1,4 @@
-# ReceptionAI 
+<img width="2560" height="1368" alt="image" src="https://github.com/user-attachments/assets/649cefad-df4c-4281-9fc1-0f43b77eeba9" /># ReceptionAI 
 ### AI Voice Receptionist for NZ GP Clinics
 
 ---
@@ -117,7 +117,7 @@ Staff alerted via AWS SNS
 📍 Wellington, NZ
 💼 Open to roles anywhere in NZ or Australia
 
-https://www.linkedin.com/in/vinay-sharma-946352232/
+https://www.linkedin.com/in/vinaysharma2323/
 [sharmavinay2323@gmail.com)
 
 ---
