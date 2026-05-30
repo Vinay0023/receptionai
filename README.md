@@ -114,7 +114,7 @@ AWS SNS staff alerts (In Progress)
 AWS EC2 deployment (In Progress)
 AWS Polly neural voice (Coming Soon)
 ```
-
+---
 
 ##  Certifications
 
