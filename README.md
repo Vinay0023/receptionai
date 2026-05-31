@@ -112,18 +112,18 @@ Demo video coming soon.
 
 ##  Current Progress
 
-Bot answers inbound calls (Done)
-Two way voice conversation (Done)
-Collects patient name and DOB (Done)
-Checks doctor availability (Done)
-Books appointments automatically (Done)
-Saves bookings to AWS RDS PostgreSQL (Done)
-AWS SES email confirmations (Done)
-Deployed AWS EC2 (Done)
-Audio Storage:AWS S3(Done)
-AWS Polly neural voice (In Progress)
-Interruption handling (Coming Soon)
-Google Calendar integration (Coming Soon)
+- Bot answers inbound calls (Done)
+- Two way voice conversation (Done)
+- Collects patient name and DOB (Done)
+- Checks doctor availability (Done)
+- Books appointments automatically (Done)
+- Saves bookings to AWS RDS PostgreSQL (Done)
+- AWS SES email confirmations (Done)
+- Deployed AWS EC2 (Done)
+- Audio Storage:AWS S3(Done)
+- AWS Polly neural voice (In Progress)
+- Interruption handling (Coming Soon)
+- Google Calendar integration (Coming Soon)
 
 ---
 
