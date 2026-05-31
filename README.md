@@ -74,6 +74,14 @@ Staff alerted via AWS SNS
 
 ---
 
+## Demo
+
+Live URL: http://3.106.124.135:8000
+
+Sally is currently running 24/7 on AWS EC2.
+NZ phone number activation in progress.
+Demo video coming soon.
+
 ##  Tech Stack
 - **Language:** Python
 - **Framework:** FastAPI
@@ -86,6 +94,7 @@ Staff alerted via AWS SNS
 - **Emails:** AWS SES
 - **Alerts:** AWS SNS
 - **Scheduling:** AWS EventBridge
+- - **Hosting:** AWS EC2 Live at http://3.106.124.135:8000
 
 ---
 
@@ -109,10 +118,11 @@ Collects patient name and DOB (Done)
 Checks doctor availability (Done)
 Books appointments automatically (Done)
 Saves bookings to AWS RDS PostgreSQL (Done)
-AWS SES email confirmations (In Progress)
-AWS SNS staff alerts (In Progress)
-AWS EC2 deployment (In Progress)
-AWS Polly neural voice (Coming Soon)
+AWS SES email confirmations (Done)
+Deployed AWS EC2 (Done)
+AWS Polly neural voice (In Progress)
+Interruption handling (Coming Soon)
+Google Calendar integration (Coming Soon)
 
 ---
 
