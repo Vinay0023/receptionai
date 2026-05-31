@@ -4,12 +4,21 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 import psycopg2
+import boto3
 from datetime import datetime
 
 load_dotenv()
 
 app = FastAPI()
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# AWS SES client
+ses_client = boto3.client(
+    'ses',
+    region_name=os.getenv("AWS_REGION"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
 
 conversation_history = []
 
@@ -68,11 +77,109 @@ def save_booking(patient_name, date_of_birth, booking_day, booking_time, doctor)
         cursor.close()
         conn.close()
         print(f"✅ Booking saved for {patient_name}")
+        return True
     except Exception as e:
         print(f"❌ Error saving booking: {e}")
+        return False
 
-# Create table when app starts
+def send_patient_email(patient_name, booking_day, booking_time, doctor):
+    try:
+        ses_client.send_email(
+            Source=os.getenv("SENDER_EMAIL"),
+            Destination={
+                'ToAddresses': [os.getenv("CLINIC_EMAIL")]
+            },
+            Message={
+                'Subject': {
+                    'Data': f'Appointment Confirmation - City Medical'
+                },
+                'Body': {
+                    'Text': {
+                        'Data': f"""Hi {patient_name},
+
+Thank you for calling City Medical.
+
+Your appointment has been confirmed:
+
+Doctor: {doctor}
+Day: {booking_day}
+Time: {booking_time}
+Location: City Medical, Wellington
+
+If you need to cancel or reschedule please call us.
+
+See you soon!
+
+Sally
+City Medical Reception
+Phone: 04 XXX XXXX"""
+                    }
+                }
+            }
+        )
+        print(f"✅ Patient email sent for {patient_name}")
+    except Exception as e:
+        print(f"❌ Email error: {e}")
+
+def send_staff_email(patient_name, date_of_birth, booking_day, booking_time, doctor, transcript):
+    try:
+        ses_client.send_email(
+            Source=os.getenv("SENDER_EMAIL"),
+            Destination={
+                'ToAddresses': [os.getenv("CLINIC_EMAIL")]
+            },
+            Message={
+                'Subject': {
+                    'Data': f'Call Summary - {patient_name} - {booking_day} {booking_time}'
+                },
+                'Body': {
+                    'Text': {
+                        'Data': f"""New Booking - Call Summary
+                        
+Patient Details:
+Name: {patient_name}
+Date of Birth: {date_of_birth}
+Booked: {booking_day} at {booking_time}
+Doctor: {doctor}
+Call Time: {datetime.now().strftime("%d %B %Y, %I:%M %p")}
+
+Full Conversation Transcript:
+{transcript}
+
+This is an automated summary from ReceptionAI.
+City Medical, Wellington"""
+                    }
+                }
+            }
+        )
+        print(f"✅ Staff email sent for {patient_name}")
+    except Exception as e:
+        print(f"❌ Staff email error: {e}")
+
 create_bookings_table()
+
+SYSTEM_PROMPT = f"""Your name is Sally. You are a receptionist at City Medical in Wellington, NZ. The doctor is Dr Steven.
+
+IMPORTANT RULES:
+- Never say you are a bot or AI
+- Never say you are automated
+- If asked if you are real say: I am Sally from City Medical, how can I help?
+- Speak naturally like a real receptionist
+- Be warm, friendly and professional
+- Keep responses short - this is a phone call
+
+Follow this exact flow:
+1. If patient wants to book ask for their name
+2. Ask for their date of birth
+3. Ask what day they would like
+4. Ask what time they would like
+5. Check availability using this schedule: {doctor_schedule}
+6. If available confirm booking and say: Perfect! I have booked you in with Dr Steven on that day and time. You will receive a confirmation email shortly. Then include: BOOKING_CONFIRMED|name|dob|day|time|Dr Steven
+7. If not available offer alternative times
+
+- Never give medical advice
+- Emergency: Please hang up and call 111 now
+- Saturday and Sunday Dr Steven is not available"""
 
 @app.get("/")
 def home():
@@ -87,7 +194,7 @@ async def voice(request: Request):
     response = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
-        <Say voice="alice">Good morning! Thank you for calling City Medical. How can I help you today?</Say>
+        <Say voice="alice">Good morning! Thank you for calling City Medical. This is Sally speaking, how can I help you today?</Say>
     </Gather>
 </Response>"""
     return PlainTextResponse(
@@ -113,61 +220,40 @@ async def handle_response(SpeechResult: str = Form(None)):
         messages=[
             {
                 "role": "system",
-                "content": f"""You are a friendly medical receptionist 
-                at a NZ GP clinic called City Medical.
-                The doctor is Dr Steven.
-                
-                Follow this exact flow:
-                1. If patient wants to book, ask for their name
-                2. Ask for their date of birth
-                3. Ask what day they would like to book
-                4. Ask what time they would like
-                5. Check if Dr Steven is available using this schedule:
-                   {doctor_schedule}
-                6. If available say: "Great! I have booked you in with 
-                   Dr Steven on [day] at [time]. You will receive a 
-                   confirmation shortly. Is there anything else I can 
-                   help you with?"
-                7. If not available say: "I'm sorry, Dr Steven is not 
-                   available at that time. The available times on [day] 
-                   are [list times]. Which would you prefer?"
-                
-                IMPORTANT: When booking is confirmed include this exact 
-                format in your response:
-                BOOKING_CONFIRMED|name|dob|day|time|Dr Steven
-                
-                Rules:
-                - Keep responses short and clear
-                - This is a phone call so be conversational
-                - Be warm and professional
-                - Never give medical advice
-                - If patient mentions emergency say: 
-                  "Please hang up and call 111 immediately"
-                - Saturday and Sunday Dr Steven is not available"""
+                "content": SYSTEM_PROMPT
             }
         ] + conversation_history
     )
 
     bot_reply = ai_response.choices[0].message.content
 
-    print(f"Bot replied: {bot_reply}")
+    print(f"Sally replied: {bot_reply}")
 
-    # Check if booking was confirmed and save to database
     if "BOOKING_CONFIRMED|" in bot_reply:
         try:
             parts = bot_reply.split("BOOKING_CONFIRMED|")[1].split("|")
-            save_booking(
-                patient_name=parts[0],
-                date_of_birth=parts[1],
-                booking_day=parts[2],
-                booking_time=parts[3],
-                doctor=parts[4].split("\n")[0]
-            )
+            patient_name = parts[0]
+            date_of_birth = parts[1]
+            booking_day = parts[2]
+            booking_time = parts[3]
+            doctor = parts[4].split("\n")[0]
+
+            save_booking(patient_name, date_of_birth, booking_day, booking_time, doctor)
+
+            transcript = "\n".join([
+                f"{msg['role'].upper()}: {msg['content']}"
+                for msg in conversation_history
+            ])
+
+            send_patient_email(patient_name, booking_day, booking_time, doctor)
+            send_staff_email(patient_name, date_of_birth, booking_day, booking_time, doctor, transcript)
+
             bot_reply = bot_reply.replace(
                 bot_reply[bot_reply.find("BOOKING_CONFIRMED"):], ""
             ).strip()
+
         except Exception as e:
-            print(f"Error parsing booking: {e}")
+            print(f"Error processing booking: {e}")
 
     conversation_history.append({
         "role": "assistant",
@@ -207,7 +293,7 @@ def test_ai():
         max_tokens=150,
         messages=[{
             "role": "user",
-            "content": "You are a friendly medical receptionist at a NZ GP clinic. Greet a patient calling the clinic."
+            "content": "You are Sally, a friendly receptionist at City Medical NZ. Greet a patient."
         }]
     )
     return {"response": response.choices[0].message.content}
