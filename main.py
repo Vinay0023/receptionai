@@ -6,13 +6,28 @@ import os
 import psycopg2
 import boto3
 from datetime import datetime
+import uuid
 
 load_dotenv()
 
 app = FastAPI()
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# AWS SES client
+# AWS clients
+polly_client = boto3.client(
+    'polly',
+    region_name=os.getenv("AWS_REGION"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+
+s3_client = boto3.client(
+    's3',
+    region_name=os.getenv("AWS_REGION"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+
 ses_client = boto3.client(
     'ses',
     region_name=os.getenv("AWS_REGION"),
@@ -38,7 +53,8 @@ def get_db_connection():
         database=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        port=os.getenv("DB_PORT")
+        port=os.getenv("DB_PORT"),
+        connect_timeout=10
     )
     return conn
 
@@ -82,6 +98,30 @@ def save_booking(patient_name, date_of_birth, booking_day, booking_time, doctor)
         print(f"❌ Error saving booking: {e}")
         return False
 
+def text_to_speech_url(text):
+    try:
+        response = polly_client.synthesize_speech(
+            Text=text,
+            OutputFormat='mp3',
+            VoiceId='Aria',
+            Engine='neural'
+        )
+        audio_data = response['AudioStream'].read()
+        filename = f"audio/{uuid.uuid4()}.mp3"
+        s3_client.put_object(
+            Bucket='receptionai-audio',
+            Key=filename,
+            Body=audio_data,
+            ContentType='audio/mpeg',
+            ACL='public-read'
+        )
+        url = f"https://receptionai-audio.s3.ap-southeast-2.amazonaws.com/{filename}"
+        print(f"✅ Audio generated: {url}")
+        return url
+    except Exception as e:
+        print(f"❌ Polly error: {e}")
+        return None
+
 def send_patient_email(patient_name, booking_day, booking_time, doctor):
     try:
         ses_client.send_email(
@@ -111,8 +151,7 @@ If you need to cancel or reschedule please call us.
 See you soon!
 
 Sally
-City Medical Reception
-Phone: 04 XXX XXXX"""
+City Medical Reception"""
                     }
                 }
             }
@@ -135,7 +174,7 @@ def send_staff_email(patient_name, date_of_birth, booking_day, booking_time, doc
                 'Body': {
                     'Text': {
                         'Data': f"""New Booking - Call Summary
-                        
+
 Patient Details:
 Name: {patient_name}
 Date of Birth: {date_of_birth}
@@ -191,7 +230,17 @@ def home():
 @app.post("/voice")
 async def voice(request: Request):
     conversation_history.clear()
-    response = """<?xml version="1.0" encoding="UTF-8"?>
+    greeting = "Good morning! Thank you for calling City Medical. This is Sally speaking, how can I help you today?"
+    audio_url = text_to_speech_url(greeting)
+    if audio_url:
+        response = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
+        <Play>{audio_url}</Play>
+    </Gather>
+</Response>"""
+    else:
+        response = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
         <Say voice="alice">Good morning! Thank you for calling City Medical. This is Sally speaking, how can I help you today?</Say>
@@ -206,14 +255,11 @@ async def voice(request: Request):
 @app.post("/handle-response")
 async def handle_response(SpeechResult: str = Form(None)):
     caller_said = SpeechResult or "hello"
-
     print(f"Caller said: {caller_said}")
-
     conversation_history.append({
         "role": "user",
         "content": caller_said
     })
-
     ai_response = groq_client.chat.completions.create(
         model="llama-3.1-8b-instant",
         max_tokens=150,
@@ -224,11 +270,8 @@ async def handle_response(SpeechResult: str = Form(None)):
             }
         ] + conversation_history
     )
-
     bot_reply = ai_response.choices[0].message.content
-
     print(f"Sally replied: {bot_reply}")
-
     if "BOOKING_CONFIRMED|" in bot_reply:
         try:
             parts = bot_reply.split("BOOKING_CONFIRMED|")[1].split("|")
@@ -237,36 +280,37 @@ async def handle_response(SpeechResult: str = Form(None)):
             booking_day = parts[2]
             booking_time = parts[3]
             doctor = parts[4].split("\n")[0]
-
             save_booking(patient_name, date_of_birth, booking_day, booking_time, doctor)
-
             transcript = "\n".join([
                 f"{msg['role'].upper()}: {msg['content']}"
                 for msg in conversation_history
             ])
-
             send_patient_email(patient_name, booking_day, booking_time, doctor)
             send_staff_email(patient_name, date_of_birth, booking_day, booking_time, doctor, transcript)
-
             bot_reply = bot_reply.replace(
                 bot_reply[bot_reply.find("BOOKING_CONFIRMED"):], ""
             ).strip()
-
         except Exception as e:
             print(f"Error processing booking: {e}")
-
     conversation_history.append({
         "role": "assistant",
         "content": bot_reply
     })
-
-    response = f"""<?xml version="1.0" encoding="UTF-8"?>
+    audio_url = text_to_speech_url(bot_reply)
+    if audio_url:
+        response = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
+        <Play>{audio_url}</Play>
+    </Gather>
+</Response>"""
+    else:
+        response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Gather input="speech" action="/handle-response" timeout="3" speechTimeout="2" language="en-NZ">
         <Say voice="alice">{bot_reply}</Say>
     </Gather>
 </Response>"""
-
     return PlainTextResponse(
         content=response,
         media_type="application/xml",
