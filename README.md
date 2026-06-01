@@ -110,6 +110,16 @@ Demo video coming soon.
 
 ---
 
+## Security
+
+- All API keys stored in environment variables
+- .env file excluded from version control
+- AWS RDS access restricted via security groups
+- Twilio webhook validation (in progress)
+- HTTPS encryption (in progress)
+- Input sanitization on all user inputs
+- AWS IAM roles with least privilege access
+  
 ##  Current Progress
 
 - Bot answers inbound calls (Done)
