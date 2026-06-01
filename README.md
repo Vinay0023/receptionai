@@ -56,21 +56,21 @@ No more voicemail confusion.
 ---
 
 ##  Architecture
-Patient calls clinic
-↓
-Twilio receives call
-↓
-Groq AI understands conversation
-↓
-FastAPI backend processes response
-↓
-Bot speaks back to patient
-↓
-Booking saved to AWS RDS PostgreSQL
-↓
-Email confirmation via AWS SES
-↓
-Staff alerted via AWS SNS
+- Patient calls clinic
+- ↓
+- Twilio receives call
+- ↓
+- Groq AI understands conversation
+- ↓
+- FastAPI backend processes response
+- ↓
+- Bot speaks back to patient
+- ↓
+- Booking saved to AWS RDS PostgreSQL
+- ↓
+- Email confirmation via AWS SES
+- ↓
+- Staff alerted via AWS SNS
 
 ---
 
@@ -94,7 +94,9 @@ Demo video coming soon.
 - **Emails:** AWS SES
 - **Alerts:** AWS SNS
 - **Scheduling:** AWS EventBridge
-- - **Hosting:** AWS EC2 Live at http://3.106.124.135:8000
+- **Hosting:** AWS EC2 Live at http://3.106.124.135:8000
+-  **Real Time Voice:** Vapi.ai ✅
+- **AI Voice:** Riley (Vapi Assistant)
 
 ---
 
@@ -131,8 +133,10 @@ Demo video coming soon.
 - AWS SES email confirmations (Done)
 - Deployed AWS EC2 (Done)
 - Audio Storage:AWS S3(Done)
-- AWS Polly neural voice (In Progress)
-- Interruption handling (Coming Soon)
+- Interruption handling (Done)
+- Real time voice with Vapi.ai (Done)
+- Natural conversation no lag (Done)
+- Interruption handling (Done)
 - Google Calendar integration (Coming Soon)
 
 ---
